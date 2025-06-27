@@ -1,10 +1,13 @@
 local api = require("api")
 local auxu = {
     name = "Actually Useable X Up",
-    version = "2.0",
-    author = "MikeTheShadow",
+    version = "2.1",
+    author = "MikeTheShadow & Psejik",
     desc = "It's actually useable."
 }
+
+local blackList = {}
+local blackFile = "auxu/blacklist.lua"
 
 local blocklist = {}
 
@@ -34,7 +37,7 @@ local function OnLoad()
         settings.hide_cancel = false
         api.SaveSettings()
     end
-
+	
     -- Recruit canvas
 
     RecruitCanvas = api.Interface:CreateEmptyWindow("recruitWindow")
@@ -159,6 +162,12 @@ local function ResetRecruit()
 
 end
 
+local function getData(filename)
+    local data = api.File:Read(filename)
+    if data == nil then return {} end
+    return data
+end
+
 local function OnChatMessage(channelId, speakerId,_, speakerName, message)
 
     message = message:lower()
@@ -170,14 +179,14 @@ local function OnChatMessage(channelId, speakerId,_, speakerName, message)
     if not speakerName or recruit_message == "" then
         return
     end
-
+	
     if not is_recruiting then
         ResetRecruit()
         return
     end
 
     -- Filter check
-
+	
     filter_selection = filter_dropdown.selctedIndex
 
     if filter_selection == 1 and message ~= recruit_message then
@@ -187,6 +196,22 @@ local function OnChatMessage(channelId, speakerId,_, speakerName, message)
     elseif filter_selection == 3 and string.sub(message, 1, #recruit_message) ~= recruit_message then
         return
     end
+	
+	
+	-- blackList checking
+	blackList = getData(blackFile)
+	if blackList == nil or blackList == "" then
+		blackList = {}
+		api.File:Write(blackFile, blackList)
+	end
+	
+	for _, us in ipairs(blackList) do
+		if speakerName == us then
+			api.Log:Err(speakerName .. " have failed try to joined (blacklisted) !")
+			return
+		end
+	end
+	
 
     recruit_method = dms_only.selctedIndex
 
